@@ -115,17 +115,19 @@ pub fn verify(
             Ok(ed25519::eddsa_verify(&key, &sig, msg))
         }
         Mode::P256 => {
-            let hash = match hash.into() {
-                Some(h) => h,
-                None => return Err(Error::HashAlgorithmMissing),
-            };
             let sig = match p256::Signature::from_byte_slice(signature) {
                 Ok(s) => s,
                 Err(_) => return Err(Error::InvalidSignature),
             };
-            match p256::ecdsa_verify(hash, msg, pk, &sig) {
-                Ok(r) => Ok(r),
-                Err(_) => Err(Error::InvalidPoint),
+            match hash.into() {
+                Some(h) => match p256::ecdsa_verify(h, msg, pk, &sig) {
+                    Ok(r) => Ok(r),
+                    Err(_) => Err(Error::InvalidPoint),
+                }
+                None => match p256::ecdsa_verify_no_hash(msg, pk, &sig) {
+                    Ok(r) => Ok(r),
+                    Err(_) => Err(Error::InvalidPoint),
+                }
             }
         }
     }

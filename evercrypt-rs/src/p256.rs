@@ -254,6 +254,25 @@ pub fn ecdsa_verify(
     }
 }
 
+/// Verify EcDSA `signature` over P256 on `msg` with `pk` without hashing.
+/// Note that the public key `pk` must be a compressed or uncompressed point.
+pub fn ecdsa_verify_no_hash(
+    msg: &[u8],
+    pk: &[u8],
+    signature: &Signature,
+) -> Result<bool, Error> {
+    let public = validate_pk(pk)?;
+    unsafe {
+        Ok(Hacl_P256_ecdsa_verif_without_hash(
+            msg.len() as u32,
+            msg.as_ptr() as _,
+            public.as_ptr() as _,
+            signature.r.as_ptr() as _,
+            signature.s.as_ptr() as _,
+        ))
+    }
+}
+
 #[cfg(feature = "random")]
 /// Generate a random nonce for ECDSA.
 pub fn random_nonce() -> Result<Nonce, Error> {
